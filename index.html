@@ -241,7 +241,6 @@
     <script>
         // قائمة لتخزين الفيديوهات المضافة
         let videoList = [];
-        let openWindows = []; // لتخزين النوافذ المفتوحة
 
         function shareContent() {
             const fileInput = document.getElementById('fileInput');
@@ -292,7 +291,7 @@
                 const playButton = document.createElement('button');
                 playButton.innerHTML = '<i class="fas fa-desktop"></i> اعرض الآن';
                 playButton.className = 'play-btn'; // إضافة فئة خاصة للزر
-                playButton.onclick = () => openVideoInNewWindow(video.url, index);
+                playButton.onclick = () => openVideoInNewWindow(video.url);
 
                 // زر "إيقاف/تشغيل الفيديو" مع رمز التشغيل والإيقاف
                 const toggleButton = document.createElement('button');
@@ -319,7 +318,7 @@
 
                 const linkInput = document.createElement('input');
                 linkInput.type = 'text';
-                linkInput.value = video.url; // رابط الفيديو
+                linkInput.value = `video-player.html?video=${encodeURIComponent(video.url)}`; // رابط الفيديو
                 linkInput.readOnly = true; // جعل الحقل للقراءة فقط
 
                 const copyButton = document.createElement('button');
@@ -343,50 +342,8 @@
         }
 
         // فتح الفيديو في نافذة جديدة
-        function openVideoInNewWindow(url, index) {
-            // حساب أبعاد الشاشة
-            const screenWidth = screen.width;
-            const screenHeight = screen.height;
-
-            // فتح النافذة الجديدة بحجم الشاشة الكامل
-            const newWindow = window.open('', '_blank', `width=${screenWidth},height=${screenHeight},fullscreen=yes`);
-            newWindow.document.write(`
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>عرض الفيديو</title>
-                    <style>
-                        body, html {
-                            margin: 0;
-                            padding: 0;
-                            width: 100%;
-                            height: 100%;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            background-color: #000;
-                        }
-                        video {
-                            width: 100%;
-                            height: 100%;
-                            object-fit: contain;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <video autoplay muted loop controls playsinline>
-                        <source src="${url}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                </body>
-                </html>
-            `);
-            newWindow.document.close();
-
-            // تخزين النافذة المفتوحة في القائمة
-            openWindows[index] = newWindow;
+        function openVideoInNewWindow(url) {
+            window.open(`video-player.html?video=${encodeURIComponent(url)}`, '_blank');
         }
 
         // تبديل حالة تشغيل الفيديو (إيقاف/تشغيل)
@@ -395,30 +352,22 @@
             const isPaused = button.dataset.paused === 'true'; // حالة الزر الحالية
 
             // إذا كان الفيديو يعمل في نافذة جديدة
-            if (openWindows[index]) {
-                const videoElement = openWindows[index].document.querySelector('video');
-                if (videoElement) {
-                    if (isPaused) {
-                        videoElement.play(); // تشغيل الفيديو
-                        button.innerHTML = '<i class="fas fa-pause"></i> إيقاف'; // تغيير النص والرمز
-                        button.dataset.paused = 'false'; // تحديث حالة الزر
-                    } else {
-                        videoElement.pause(); // إيقاف الفيديو
-                        button.innerHTML = '<i class="fas fa-play"></i> تشغيل'; // تغيير النص والرمز
-                        button.dataset.paused = 'true'; // تحديث حالة الزر
-                    }
+            const videoElement = document.querySelector(`video[data-index="${index}"]`);
+            if (videoElement) {
+                if (isPaused) {
+                    videoElement.play(); // تشغيل الفيديو
+                    button.innerHTML = '<i class="fas fa-pause"></i> إيقاف'; // تغيير النص والرمز
+                    button.dataset.paused = 'false'; // تحديث حالة الزر
+                } else {
+                    videoElement.pause(); // إيقاف الفيديو
+                    button.innerHTML = '<i class="fas fa-play"></i> تشغيل'; // تغيير النص والرمز
+                    button.dataset.paused = 'true'; // تحديث حالة الزر
                 }
             }
         }
 
         // إزالة الفيديو من القائمة
         function removeVideo(index) {
-            // إغلاق النافذة المفتوحة لهذا الفيديو إن وجدت
-            if (openWindows[index]) {
-                openWindows[index].close(); // إغلاق النافذة
-                openWindows[index] = null; // إزالة النافذة من القائمة
-            }
-
             // حذف الفيديو من القائمة
             videoList.splice(index, 1);
             updateVideoList(); // تحديث القائمة المعروضة
